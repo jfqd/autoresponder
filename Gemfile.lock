@@ -1,0 +1,24 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    dotenv (2.5.0)
+    mail (2.7.0)
+      mini_mime (>= 0.1.1)
+    mini_mime (1.0.0)
+    mysql2 (0.5.1)
+    pony (1.12)
+      mail (>= 2.0)
+    sequel (5.10.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  dotenv!
+  mail!
+  mysql2!
+  pony!
+  sequel!
+
+BUNDLED WITH
+   1.16.2

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export LC_MONETARY=de_DE.UTF-8
+export LC_NUMERIC=en_US.UTF-8
+export PATH=/usr/local/ruby/2.1/bin:/opt/local/sbin:/opt/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
+export LC_MESSAGES=en_US.UTF-8
+export LC_COLLATE=C
+export LANG=de_DE.UTF-8
+export TZ=UTC
+export LC_CTYPE=en_US.UTF-8
+export LC_TIME=de_DE.UTF-8
+
+/usr/bin/env ruby /var/lib/vmail/autoresponder.rb

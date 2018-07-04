@@ -1,0 +1,14 @@
+MAILBOX_PATH="/your/mailbox/path"
+
+SUBJECT="Autoresponder notice"
+
+MAILSERVER="mail.example.com"
+PORT="587"
+MAILUSER="noreply@example.com"
+MAILPDW="pwd"
+DOMAIN="example.com"
+
+MYSQL_HOST="127.0.0.1"
+MYSQL_DATABASE="postfix"
+MYSQL_USER="user"
+MYSQL_PWD="secret"
