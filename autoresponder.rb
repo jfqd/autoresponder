@@ -52,7 +52,7 @@ def autoreply?(mail)
     if value
       value = value.to_s.downcase
       if (ignored_value.is_a?(Regexp) && value.match(ignored_value)) || value == ignored_value
-        puts "ignoring autoreply email with #{key}:#{value} header"
+        puts "*** ignoring autoreply email with #{key}:#{value} header"
         return true
       end
     end
@@ -93,6 +93,7 @@ def spam?(mail)
 end
 
 def send_mail(to,from,message)
+  puts "*** Sending to: #{to}"
   Pony.mail(
     :to      => to,
     :from    => from,
@@ -171,8 +172,6 @@ mailboxes.each do |mailbox|
           from = mail.from.first rescue nil
           # test if we should process
           if mail && from && !unwanted_from?(from) && !mailinglist?(mail) && !autoreply?(mail) && !spam?(mail) && !previously_send?(address,from)
-            # log to whom we are sending mail
-            puts "*** Sending to: #{from}"
             send_mail(from,address,message)
           end # if !unwanted_from?(from) ...
           
