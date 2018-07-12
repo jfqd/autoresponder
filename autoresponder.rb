@@ -10,13 +10,29 @@ require 'sequel'
 require 'dotenv'
 Dotenv.load
 
-DB = Sequel.connect(
-  :adapter => 'mysql2',
-  :user => ENV['MYSQL_USER'],
-  :host => ENV['MYSQL_HOST'],
-  :database => ENV['MYSQL_DATABASE'],
-  :password=> ENV['MYSQL_PWD']
-)
+begin
+  DB = Sequel.connect(
+    :adapter => 'mysql2',
+    :user => ENV['MYSQL_USER'],
+    :host => ENV['MYSQL_HOST'],
+    :database => ENV['MYSQL_DATABASE'],
+    :password=> ENV['MYSQL_PWD']
+  )
+rescue Exception => e
+  STDERR.puts "ERROR: failed to connect to Database!"
+  exit 1
+end
+
+begin
+  require 'redis'
+  REDIS = Redis.new(
+    host: ENV['REDIS_HOST'],
+    port: ENV['REDIS_PORT'],
+    db:   ENV['REDIS_DB']
+  )
+rescue Exception => e
+  STDERR.puts "ERROR: failed to connect to Redis!"
+end
 
 def now
   Time.now.utc
@@ -76,6 +92,51 @@ def spam?(mail)
   value.to_f > 4.00 ? true : false
 end
 
+def send_mail(to,from,message)
+  Pony.mail(
+    :to      => to,
+    :from    => from,
+    :subject => ENV['SUBJECT'],
+    :body    => message,
+    :via => :smtp,
+    :headers => { "X-Auto-Response-Suppress" => "All" },
+    :via_options => {
+      :address              => ENV['MAILSERVER'],
+      :port                 => ENV['PORT'],
+      :enable_starttls_auto => true,
+      :user_name            => ENV['MAILUSER'],
+      :password             => ENV['MAILPDW'],
+      :authentication       => :plain,
+      :domain               => ENV['DOMAIN']
+    }
+  )
+  # from = to whom it was send!
+  # to   = from whom it was received!
+  prevent_resend_to_same_sender(from,to)
+end
+
+# to   = to whom it was send
+# from = from whom it was received
+def prevent_resend_to_same_sender(to,from)
+  return if REDIS == nil
+  one_week = 86400 * 7
+  REDIS.hmset( 
+    "#{to}_#{from}",
+    'delivered', now.to_i
+  )
+  REDIS.expire("#{to}_#{from}", one_week)
+end
+
+# to   = to whom it was send
+# from = from whom it was received
+def previously_send?(to,from)
+  return false if REDIS == nil
+  REDIS.hmget( 
+    "#{to}_#{from}",
+    'delivered'
+  ) != nil
+end
+
 puts "## Starting: #{now} ##"
 
 # find mailboxes to process
@@ -108,27 +169,10 @@ mailboxes.each do |mailbox|
           mail = Mail.read(mail_path)
           from = mail.from.first rescue nil
           # test if we should process
-          if mail && from && !unwanted_from?(from) && !mailinglist?(mail) && !autoreply?(mail) && !spam?(mail)
+          if mail && from && !unwanted_from?(from) && !mailinglist?(mail) && !autoreply?(mail) && !spam?(mail) && !previously_send?(address,from)
             # log to whom we are sending mail
             puts "*** Sending to: #{from}"
-
-            Pony.mail(
-              :to      => from,
-              :from    => address,
-              :subject => ENV['SUBJECT'],
-              :body    => message,
-              :via => :smtp,
-              :headers => { "X-Auto-Response-Suppress" => "All" },
-              :via_options => {
-                :address              => ENV['MAILSERVER'],
-                :port                 => ENV['PORT'],
-                :enable_starttls_auto => true,
-                :user_name            => ENV['MAILUSER'],
-                :password             => ENV['MAILPDW'],
-                :authentication       => :plain,
-                :domain               => ENV['DOMAIN']
-              }
-            )
+            send_mail(from,address,message)
           end # if !unwanted_from?(from) ...
           
         end # if mail.stat.mtime > last_date

@@ -4,4 +4,5 @@ source 'https://rubygems.org' do
   gem "dotenv"
   gem 'mysql2'
   gem 'sequel'
+  gem "redis"
 end
