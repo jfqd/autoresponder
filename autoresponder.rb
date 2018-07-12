@@ -131,10 +131,11 @@ end
 # from = from whom it was received
 def previously_send?(to,from)
   return false if REDIS == nil
-  REDIS.hmget( 
+  r = REDIS.hmget( 
     "#{to}_#{from}",
     'delivered'
-  ) != nil
+  )
+  r.class == Array && r.first != nil
 end
 
 puts "## Starting: #{now} ##"
