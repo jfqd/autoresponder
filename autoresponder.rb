@@ -93,7 +93,7 @@ def spam?(mail)
 end
 
 def send_mail(to,from,message)
-  puts "*** Sending to: #{to}"
+  puts "*** #{now.strftime("%Y-%m-%d")} Sending to: #{to}\t from: #{from}"
   Pony.mail(
     :to      => to,
     :from    => from,
