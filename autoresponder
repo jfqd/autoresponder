@@ -10,4 +10,5 @@ export TZ=UTC
 export LC_CTYPE=en_US.UTF-8
 export LC_TIME=de_DE.UTF-8
 
-/usr/bin/env ruby /var/lib/vmail/autoresponder.rb
+/usr/bin/cd /var/lib/vmail
+/usr/bin/env ruby ./autoresponder.rb
