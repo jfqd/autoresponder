@@ -62,7 +62,14 @@ end
 
 def mailinglist?(mail)
   skip = false
-  a = ['List-Id', 'List-Unsubscribe', 'Feedback-ID']
+  a = ['List-Id', 'List-Unsubscribe', 'List-Help', 'Feedback-ID']
+  mail.header_fields.each {|f| skip=true if a.include?(f.name) }
+  return skip
+end
+
+def alias_delivery?(mail)
+  skip = false
+  a = ['X-Original-To']
   mail.header_fields.each {|f| skip=true if a.include?(f.name) }
   return skip
 end
@@ -171,10 +178,14 @@ mailboxes.each do |mailbox|
           mail = Mail.read(mail_path)
           from = mail.from.first rescue nil
           # test if we should process
-          if mail && from && !unwanted_from?(from) && !mailinglist?(mail) && !autoreply?(mail) && !spam?(mail) && !previously_send?(address,from)
-            send_mail(from,address,message)
-          end # if !unwanted_from?(from) ...
-          
+          send_mail(from,address,message) if mail &&
+                                             from &&
+                                             !unwanted_from?(from) &&
+                                             !mailinglist?(mail) &&
+                                             !alias_delivery?(mail) &&
+                                             !autoreply?(mail) &&
+                                             !spam?(mail) &&
+                                             !previously_send?(address,from)
         end # if mail.stat.mtime > last_date
       end # unless filename[0,1] == "."
     end # Dir.new(mailbox_path).each do |filename|
