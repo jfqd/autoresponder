@@ -102,20 +102,21 @@ end
 def send_mail(to,from,message)
   puts "*** #{now.strftime("%Y-%m-%d")} Sending to: #{to}\t from: #{from}"
   Pony.mail(
-    :to      => to,
-    :from    => from,
-    :subject => ENV['SUBJECT'],
-    :body    => message,
-    :via => :smtp,
-    :headers => { "X-Auto-Response-Suppress" => "All" },
-    :via_options => {
-      :address              => ENV['MAILSERVER'],
-      :port                 => ENV['PORT'],
-      :enable_starttls_auto => true,
-      :user_name            => ENV['MAILUSER'],
-      :password             => ENV['MAILPDW'],
-      :authentication       => :plain,
-      :domain               => ENV['DOMAIN']
+    to:      to,
+    from:    from,
+    subject: ENV['SUBJECT'],
+    body:    message,
+    charset: 'UTF-8',
+    headers: { "X-Auto-Response-Suppress" => "All" },
+    via:     :smtp,
+    via_options: {
+      address:              ENV['MAILSERVER'],
+      port:                 ENV['PORT'],
+      enable_starttls_auto: true,
+      user_name:            ENV['MAILUSER'],
+      password:             ENV['MAILPDW'],
+      authentication:       :plain,
+      domain:               ENV['DOMAIN']
     }
   )
   # from = to whom it was send!
