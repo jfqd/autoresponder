@@ -69,13 +69,6 @@ def mailinglist?(mail)
   return skip
 end
 
-def alias_delivery?(mail)
-  skip = false
-  a = ['X-Original-To']
-  mail.header_fields.each {|f| skip=true if a.include?(f.name) }
-  return skip
-end
-
 def unwanted_from?(from)
   from =~ /MAILER.DAEMON/i ||
   from =~ /^root@/i ||
