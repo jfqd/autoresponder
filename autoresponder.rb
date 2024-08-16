@@ -69,6 +69,13 @@ def mailinglist?(mail)
   return skip
 end
 
+def alias_delivery?(mail)
+  skip = false
+  a = ['X-Original-To']
+  mail.header_fields.each {|f| skip=true if a.include?(f.name) }
+  return skip
+end
+
 def unwanted_from?(from)
   from =~ /MAILER.DAEMON/i ||
   from =~ /^root@/i ||
@@ -102,13 +109,14 @@ end
 def send_mail(to,from,message)
   puts "*** [#{now.strftime("%Y-%m-%d")}] Sending to: #{to}\t from: #{from}"
   Pony.mail(
-    :to      => to,
-    :from    => from,
-    :subject => ENV['SUBJECT'],
-    :body    => message,
-    :via => :smtp,
-    :headers => { "X-Auto-Response-Suppress" => "All" },
-    :via_options => {
+    to:      to,
+    from:    from,
+    subject: ENV['SUBJECT'],
+    body:    message,
+    charset: 'UTF-8',
+    via:     :smtp,
+    headers: { "X-Auto-Response-Suppress" => "All" },
+    via_options: {
       address:              ENV['MAILSERVER'],
       port:                 ENV['PORT'],
       enable_starttls_auto: true,
@@ -179,7 +187,14 @@ mailboxes.each do |mailbox|
           mail = Mail.read(mail_path)
           from = mail.from.first rescue nil
           # test if we should process
-          if mail && from && !unwanted_from?(from) && !mailinglist?(mail) && !autoreply?(mail) && !spam?(mail) && !previously_send?(address,from) && address != from
+          if mail &&
+               from &&
+                 !unwanted_from?(from) &&
+                   !mailinglist?(mail) &&
+                     !autoreply?(mail) &&
+                        !spam?(mail) &&
+                          !previously_send?(address,from) &&
+                             address != from
             send_mail(from,address,message)
           end # if !unwanted_from?(from) ...
           
