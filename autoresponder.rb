@@ -8,7 +8,9 @@ require 'time'
 require 'mysql2'
 require 'sequel'
 require 'dotenv'
-Dotenv.load
+Dotenv.load("/opt/local/var/vmail/.env")
+
+Encoding.default_internal = "UTF-8"
 
 begin
   DB = Sequel.connect(
@@ -62,14 +64,7 @@ end
 
 def mailinglist?(mail)
   skip = false
-  a = ['List-Id', 'List-Unsubscribe', 'List-Help', 'Feedback-ID']
-  mail.header_fields.each {|f| skip=true if a.include?(f.name) }
-  return skip
-end
-
-def alias_delivery?(mail)
-  skip = false
-  a = ['X-Original-To']
+  a = ['List-Id', 'List-Unsubscribe', 'Feedback-ID']
   mail.header_fields.each {|f| skip=true if a.include?(f.name) }
   return skip
 end
@@ -86,10 +81,15 @@ def unwanted_from?(from)
   from.include?('no-replay') ||
   from.include?('no-reply') ||
   from.include?('noreply') ||
+  from.include?('do-not-reply') ||
   from.include?('preisvergleich') ||
   from.include?('news@') ||
   from.include?('@news') ||
+  from.include?('@qutic.net') ||
+  from.include?('sales@') ||
+  from.include?('report@') ||
   from.include?('support@') ||
+  from.include?('zabbix@') ||
   from.include?('newsletter')
 end
 
@@ -100,22 +100,22 @@ def spam?(mail)
 end
 
 def send_mail(to,from,message)
-  puts "*** #{now.strftime("%Y-%m-%d")} Sending to: #{to}\t from: #{from}"
+  puts "*** [#{now.strftime("%Y-%m-%d")}] Sending to: #{to}\t from: #{from}"
   Pony.mail(
-    to:      to,
-    from:    from,
-    subject: ENV['SUBJECT'],
-    body:    message,
-    charset: 'UTF-8',
-    headers: { "X-Auto-Response-Suppress" => "All" },
-    via:     :smtp,
-    via_options: {
+    :to      => to,
+    :from    => from,
+    :subject => ENV['SUBJECT'],
+    :body    => message,
+    :via => :smtp,
+    :headers => { "X-Auto-Response-Suppress" => "All" },
+    :via_options => {
       address:              ENV['MAILSERVER'],
       port:                 ENV['PORT'],
       enable_starttls_auto: true,
       user_name:            ENV['MAILUSER'],
       password:             ENV['MAILPDW'],
       authentication:       :plain,
+      openssl_verify_mode:  OpenSSL::SSL::VERIFY_NONE,
       domain:               ENV['DOMAIN']
     }
   )
@@ -179,14 +179,10 @@ mailboxes.each do |mailbox|
           mail = Mail.read(mail_path)
           from = mail.from.first rescue nil
           # test if we should process
-          send_mail(from,address,message) if mail &&
-                                             from &&
-                                             !unwanted_from?(from) &&
-                                             !mailinglist?(mail) &&
-                                             !alias_delivery?(mail) &&
-                                             !autoreply?(mail) &&
-                                             !spam?(mail) &&
-                                             !previously_send?(address,from)
+          if mail && from && !unwanted_from?(from) && !mailinglist?(mail) && !autoreply?(mail) && !spam?(mail) && !previously_send?(address,from) && address != from
+            send_mail(from,address,message)
+          end # if !unwanted_from?(from) ...
+          
         end # if mail.stat.mtime > last_date
       end # unless filename[0,1] == "."
     end # Dir.new(mailbox_path).each do |filename|
